@@ -500,6 +500,12 @@ module.exports = {
           type: String,
           default: 'master',
           description: 'branch to push to'
+        },
+        {
+          name: 'push-condition',
+          type: Boolean,
+          default: true,
+          description: 'Boolean option that determines if it\'s okay to push'
         }],
         run: function (options, rawArgs) {
           let requestOptions = {
@@ -547,7 +553,7 @@ module.exports = {
                 throw new Error('Exit 1')
               })
             })
-          } else if (prNumber === false || prNumber === 'false') {
+          } else if (prNumber === false || prNumber === 'false' && options.pushCondition) {
             return runCommand('ember', ['new-baseline', '--image-directory=' +
              options.imageDirectory]).then(function (params) {
                console.log('Git add')
@@ -556,10 +562,12 @@ module.exports = {
                  return runCommand('git', ['commit', '-m',
                   '"Adding new baseline images [ci skip]"'], true).then(function (params) {
                     console.log('Git push')
-                    return runCommand('git', ['push', 'origin', 'HEAD:' + options.branch], true)
+                    return runCommand('git', ['push', 'origin', 'HEAD:' + options.branch])
                   })
                })
              })
+          } else {
+            return runCommand('ember', ['test'])
           }
         }
       },
@@ -608,6 +616,11 @@ module.exports = {
           type: String,
           default: '',
           description: 'Url of api server to save and host images. https://gitlab.com/EWhite613/express-reports'
+        }, {
+          name: 'push-condition',
+          type: Boolean,
+          default: true,
+          description: 'Boolean option that determines if it\'s okay to push'
         }],
         run: function (options, rawArgs) {
           if (options.user.length === 0 || options.password.length === 0 || options.domain.length === 0 ||
@@ -650,7 +663,7 @@ module.exports = {
                 throw new Error('Exit 1')
               })
             })
-          } else if (prNumber === false || prNumber === 'false') {
+          } else if (prNumber === false || prNumber === 'false' && options.pushCondition) {
             return runCommand('ember', ['new-baseline', '--image-directory=' +
              options.imageDirectory]).then(function (params) {
                console.log('Git add')
@@ -659,10 +672,12 @@ module.exports = {
                  return runCommand('git', ['commit', '-m',
                   '"Adding new baseline images [ci skip]"'], true).then(function (params) {
                     console.log('Git push')
-                    return runCommand('git', ['push', 'origin', 'HEAD:' + options.branch], true)
+                    return runCommand('git', ['push', 'origin', 'HEAD:' + options.branch])
                   })
                })
              })
+          } else {
+            return runCommand('ember', ['test'])
           }
         }
       }
