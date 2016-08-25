@@ -502,10 +502,16 @@ module.exports = {
           description: 'branch to push to'
         },
         {
-          name: 'push-condition',
-          type: Boolean,
-          default: true,
-          description: 'Boolean option that determines if it\'s okay to push'
+          name: 'push-condition-compare',
+          type: String,
+          default: 'true',
+          description: 'String option that compares to push-condition-match to determine if it\'s okay to push'
+        },
+        {
+          name: 'push-condition-match',
+          type: String,
+          default: 'true',
+          description: 'String option that compares to push-condition-compare to determine if it\'s okay to push'
         }],
         run: function (options, rawArgs) {
           let requestOptions = {
@@ -553,7 +559,8 @@ module.exports = {
                 throw new Error('Exit 1')
               })
             })
-          } else if (prNumber === false || prNumber === 'false' && options.pushCondition) {
+          } else if (prNumber === false || prNumber === 'false' &&
+           options.pushConditionCompare === options.pushConditionMatch) {
             return runCommand('ember', ['new-baseline', '--image-directory=' +
              options.imageDirectory]).then(function (params) {
                console.log('Git add')
@@ -617,10 +624,16 @@ module.exports = {
           default: '',
           description: 'Url of api server to save and host images. https://gitlab.com/EWhite613/express-reports'
         }, {
-          name: 'push-condition',
-          type: Boolean,
-          default: true,
-          description: 'Boolean option that determines if it\'s okay to push'
+          name: 'push-condition-compare',
+          type: String,
+          default: 'true',
+          description: 'String option that compares to push-condition-match to determine if it\'s okay to push'
+        },
+        {
+          name: 'push-condition-match',
+          type: String,
+          default: 'true',
+          description: 'String option that compares to push-condition-compare to determine if it\'s okay to push'
         }],
         run: function (options, rawArgs) {
           if (options.user.length === 0 || options.password.length === 0 || options.domain.length === 0 ||
@@ -663,7 +676,8 @@ module.exports = {
                 throw new Error('Exit 1')
               })
             })
-          } else if (prNumber === false || prNumber === 'false' && options.pushCondition) {
+          } else if (prNumber === false || prNumber === 'false' &&
+           options.pushConditionCompare === options.pushConditionMatch) {
             return runCommand('ember', ['new-baseline', '--image-directory=' +
              options.imageDirectory]).then(function (params) {
                console.log('Git add')
