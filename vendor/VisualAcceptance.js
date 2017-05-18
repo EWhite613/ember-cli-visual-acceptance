@@ -1,8 +1,9 @@
 /*global XMLHttpRequest,$,Promise,chai,resemble, html2canvas, Image, XMLSerializer,btoa, __nightmare */
 /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "capture" }]*/
-function nightmareSendCaptureRequestAndRecieveImage (targetElement) {
+function nightmareSendCaptureRequestAndRecieveImage (imageName, targetElement) {
   return new Promise(function (resolve, reject) {
-    __nightmare.ipc.once('return-image-event', function (event, result) {
+    __nightmare.ipc.once('return-image-event' + imageName, function (event, result) {
+      console.log('got image ' + imageName)
       resolve(result.image)
     })
     var rect = targetElement.getBoundingClientRect()
@@ -15,9 +16,11 @@ function nightmareSendCaptureRequestAndRecieveImage (targetElement) {
     if (targetElement.id === '') {
       targetElement.id = 'tempVisualAcceptanceId'
     }
+    console.log('sending image ' + imageName)
     __nightmare.ipc.send('capture-event', {
       rect: clip,
-      id: targetElement.id
+      id: targetElement.id,
+      name: imageName
     })
   })
 }
@@ -227,7 +230,7 @@ function captureNightmare (imageName, width, height, misMatchPercentageMargin, t
       resolve('Not on NightmareJS')
     }
     // Get test dummy image
-    return nightmareSendCaptureRequestAndRecieveImage(targetElement).then(function (image) {
+    return nightmareSendCaptureRequestAndRecieveImage(imageName, targetElement).then(function (image) {
       image = 'data:image/png;base64,' + image
       // console.log(image)
       if (targetElement.id === 'tempVisualAcceptanceId') {
