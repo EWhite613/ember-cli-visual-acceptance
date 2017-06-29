@@ -4,10 +4,10 @@ module.exports = {
   'disable_watching': true,
   'launch_in_ci': [
     'Firefox',
-    'SlimerJsVisualAcceptance',
+    'NightmareJsVisualAcceptance',
     'PhantomJsVisualAcceptance',
-    'Chrome',
-    'NightmareJsVisualAcceptance'
+    'SlimerJsVisualAcceptance',
+    'Chromium'
   ],
   'launch_in_dev': [
     'NightmareJsVisualAcceptance'

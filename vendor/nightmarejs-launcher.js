@@ -1,29 +1,35 @@
-/*global  Testem, arguments*/
+/*global  Testem, arguments, __nightmare*/
 'use strict'
-const util = require('util')
 var Nightmare = require('nightmare')
 require('nightmare-custom-event')(Nightmare)
 
 Nightmare.action('sendImage',
   function (ns, options, parent, win, renderer, done) {
     parent.respondTo('sendImage', function (image, name, done) {
-      win.webContents.send('return-image-event' + name, {
+      win.webContents.send('return-image-event', {
         image: image
+      }).catch(function (error) {
+        console.error('error-send-image', error)
       })
       done()
     })
     done()
   },
   function (image, done) {
-    // // fs.appendFileSync('image-sent.log', 'I must be called right?\n' + image + '\n' + done)
     this.child.call('sendImage', image, done)
   })
 
-var nightmare = Nightmare()
-var fs = require('fs')
+var nightmare = Nightmare(
+  //   {
+  //   openDevTools: {
+  //     mode: 'detach'
+  //   },
+  //   show: true
+  // }
+)
 var url = process.argv[2]
 nightmare
-  .goto(url)
+  .viewport(3000, 10000)
   .on('capture-event', function (data) {
     try {
       return nightmare.evaluate(() => {
@@ -76,23 +82,36 @@ nightmare
     }
   })
   .bind('capture-event')
+  .on('exit-event', function () {
+    nightmare.exit().then(function (result) {
+      console.error(result)
+    })
+      .catch(function (error) {
+        console.error('Search failed:', error)
+        console.error('error.error', error)
+      })
+  })
+  .bind('exit-event')
+  .goto(url)
   .evaluate(function () {
     Testem.afterTests(
       // Asynchronously
       function (config, data, callback) {
         callback(null)
         // Set time to wait for callback to finish its work. Then close launcher (Issue Testem: fails to close custom launcher on Linux) https://github.com/testem/testem/issues/915
+        setTimeout(function (params) {
+          __nightmare.ipc.send('exit-event', {
+            exit: true
+          })
+        }, 2000)
+        // Set time to wait for callback to finish its work. Then close launcher (Issue Testem: fails to close custom launcher on Linux) https://github.com/testem/testem/issues/915
       }
     )
   })
-  .wait(2000)
   .then(function (result) {
     console.log('Result', result)
   })
   .catch(function (error) {
     console.error('Search failed:', error)
-    fs.appendFileSync('error.log', util.inspect(error, {
-      showHidden: false,
-      depth: null
-    }))
+    console.error('error.error', error)
   })

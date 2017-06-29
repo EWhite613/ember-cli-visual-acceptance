@@ -1,12 +1,15 @@
 /*global XMLHttpRequest,$,Promise,chai,resemble, html2canvas, Image, XMLSerializer,btoa, __nightmare */
 /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "capture" }]*/
-function nightmareSendCaptureRequestAndRecieveImage (imageName, targetElement) {
-  return new Promise(function (resolve, reject) {
+function nightmareSendCaptureRequestAndRecieveImage (targetElement) {
+  return new Promise(function (resolve) {
     __nightmare.ipc.once('return-image-event' + imageName, function (event, result) {
       console.log('got image ' + imageName)
       resolve(result.image)
     })
-    var rect = targetElement.getBoundingClientRect()
+
+    if (targetElement.id === '') {
+      targetElement.id = tempId
+    var rect = document.getElementById(targetElement.id).getBoundingClientRect()
     var clip = {
       x: rect.left,
       y: rect.top,
@@ -19,8 +22,7 @@ function nightmareSendCaptureRequestAndRecieveImage (imageName, targetElement) {
     console.log('sending image ' + imageName)
     __nightmare.ipc.send('capture-event', {
       rect: clip,
-      id: targetElement.id,
-      name: imageName
+      id: targetElement.id
     })
   })
 }
@@ -38,7 +40,8 @@ function httpGet (theUrl) {
 
 function resolvePositionFixed () {
   var fixedElements = $('*').filter(function () {
-    return window.getComputedStyle(this).position === 'fixed' && this.id !== 'mocha-stats' && this.nodeName !== 'IFRAME' && this.id !== 'ember-testing-container'
+    return window.getComputedStyle(this).position === 'fixed' && this.id !== 'mocha-stats' &&
+     this.nodeName !== 'IFRAME' && this.id !== 'ember-testing-container'
   })
   for (var i = 0; i < fixedElements.length; i++) {
     var element = fixedElements[i]
@@ -84,6 +87,7 @@ function experimentalSvgCapture () {
   })
   return Promise.all(promises)
 }
+// eslint-disable-next-line valid-jsdoc
 /**
  * Creates baseline imagesfor visual regression during standard Ember tests using html2Canvas and ResembleJS
  * @param {string} imageName - Name of the image you wish to save
@@ -101,21 +105,19 @@ function capture (imageName, done, options) {
   var captureOptions = getOptions(options)
   var targetElement = captureOptions.targetElement
 
-  if (targetElement) {
-    $(targetElement).ready(function () {
-      return _capture(imageName, captureOptions)
-        .then(function () {
-          if (typeof done === 'function') {
-            done()
-          }
-        }).catch(function (err) {
-          console.log(err)
-          if (typeof done === 'function') {
-            done(err)
-          }
-        })
-    })
-  }
+  $(targetElement).ready(function () {
+    return _capture(imageName, captureOptions)
+      .then(function () {
+        if (typeof done === 'function') {
+          done()
+        }
+      }).catch(function (err) {
+        console.log(err)
+        if (typeof done === 'function') {
+          done(err)
+        }
+      })
+  })
 }
 
 /**
@@ -194,7 +196,7 @@ function _capture (imageName, options) {
   resolvePositionFixed()
   if (window.__nightmare !== undefined) {
     return captureNightmare(imageName, options.width, options.height,
-     options.misMatchPercentageMargin, options.targetElement, options.assert, browserDirectory)
+        options.misMatchPercentageMargin, options.targetElement, options.assert, browserDirectory)
   } else if (window.callPhantom !== undefined) {
     return capturePhantom(imageName, options.width, options.height,
       options.misMatchPercentageMargin, options.targetElement, options.assert, browserDirectory)
@@ -214,25 +216,28 @@ function _capture (imageName, options) {
 }
 /**
  * Use NightmareJS to perform capture
- * @param {*} imageName
- * @param {*} width
- * @param {*} height
- * @param {*} misMatchPercentageMargin
- * @param {*} targetElement
- * @param {*} assert
- * @param {*} browserDirectory
+ * @param {string} imageName - Name of the image you wish to save
+ * @param {number} [width=null] - Define the width of the canvas in pixels. If null, renders with full width of the container(640px).
+ * @param {number} [height=null] - Define the height of the canvas in pixels. If null, renders with full height of the window.(384px).
+ * @param {float} [misMatchPercentageMargin=0.00] - The maximum percentage ResembleJs is allowed to misMatch.
+ * @param {HTMLElement} targetElement - DOM element to capture
+ * @param {object} [assert=undefined] - Use only if using qunit
+ * @param {object} [browserDirectory=undefined] - visual acceptance image path based off window.ui (holds browser info) and size of ember-testing-container
+ * @returns {Promise} ResembleJs return value
  */
-function captureNightmare (imageName, width, height, misMatchPercentageMargin, targetElement, assert, browserDirectory) {
+function captureNightmare (imageName, width, height, misMatchPercentageMargin, targetElement, assert,
+ browserDirectory) {
   // TODO: implement nightmare capture
-  browserDirectory += '-nightmareJS'
   return new Promise(function (resolve, reject) {
     if (window.__nightmare === undefined) {
       resolve('Not on NightmareJS')
     }
     // Get test dummy image
-    return nightmareSendCaptureRequestAndRecieveImage(imageName, targetElement).then(function (image) {
+    return nightmareSendCaptureRequestAndRecieveImage(targetElement).then(function (image) {
+      if (targetElement.id === 'tempVisualAcceptanceId') {
+        targetElement.id = ''
+      }
       image = 'data:image/png;base64,' + image
-      // console.log(image)
       if (targetElement.id === 'tempVisualAcceptanceId') {
         targetElement.id = ''
       }
