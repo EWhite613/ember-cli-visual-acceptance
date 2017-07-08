@@ -3,11 +3,7 @@ module.exports = {
   'test_page': 'tests/index.html?hidepassed',
   'disable_watching': true,
   'launch_in_ci': [
-    'Firefox',
-    'NightmareJsVisualAcceptance',
-    'PhantomJsVisualAcceptance',
-    'SlimerJsVisualAcceptance',
-    'Chromium'
+    'NightmareJsVisualAcceptance'
   ],
   'launch_in_dev': [
     'NightmareJsVisualAcceptance'

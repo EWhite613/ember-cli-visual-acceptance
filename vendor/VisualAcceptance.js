@@ -18,7 +18,8 @@ function nightmareSendCaptureRequestAndRecieveImage (targetElement) {
       height: rect.height
     }
     __nightmare.ipc.send('capture-event', {
-      rect: clip
+      rect: clip,
+      targetId: targetElement.id
     })
   })
 }

@@ -1,6 +1,8 @@
 /*global  Testem, arguments, __nightmare*/
 'use strict'
 var Nightmare = require('nightmare')
+const fs = require('fs')
+const util = require('util')
 require('nightmare-custom-event')(Nightmare)
 
 Nightmare.action('sendImage',
@@ -10,6 +12,8 @@ Nightmare.action('sendImage',
         image: image
       }).catch(function (error) {
         console.error('error-send-image', error)
+        fs.appendFileSync('nightmare.log', 'error-send-image\n' + util.inspect(error))
+
       })
       done()
     })
@@ -20,30 +24,45 @@ Nightmare.action('sendImage',
   })
 
 var nightmare = Nightmare(
-  //   {
-  //   openDevTools: {
-  //     mode: 'detach'
-  //   },
-  //   show: true
-  // }
+  {
+    openDevTools: {
+      mode: 'detach'
+    },
+    show: true
+  }
 )
 var url = process.argv[2]
 nightmare
-  .viewport(3000, 10000)
   .wait(2000)
   .on('capture-event', function (data) {
-    try {
-      nightmare.screenshot(undefined, data.rect).then(function (result) {
+    fs.appendFileSync('nightmare.log', 'Responding to capture\n')
+    return nightmare.viewport(data.rect.width + 1000, data.rect.height + 1000).wait(2000).scrollTo(data.rect.x + 20, data.rect.y + 20).wait(2000).evaluate(function (data) {
+      var rect = document.getElementById(data.targetId).getBoundingClientRect()
+      return {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height
+      }
+    }, data).then(function (rect) {
+      return nightmare.screenshot(undefined, data.rect).then(function (result) {
         var image = result.toString('base64')
-        nightmare.sendImage(image).then(function (result) {}).catch(function (error) {
+        return nightmare.sendImage(image).then(function (result) {}).catch(function (error) {
           console.error('error-call-send-image', error)
+          fs.appendFileSync('nightmare.log', 'error-call-send-image\n' + util.inspect(error))
+
         })
       }).catch(function (error) {
         console.error('Search failed:', error)
+        fs.appendFileSync('nightmare.log', 'Search failed:\n')
+
       })
-    } catch (error) {
-      console.error('error-capture', error)
-    }
+    }).catch(function (error) {
+      console.error('failed', error)
+      debugger
+      fs.appendFileSync('nightmare.log', 'failed to capture\n' + util.inspect(error, false, 2, false))
+
+    })
   })
   .bind('capture-event')
   .on('exit-event', function () {
